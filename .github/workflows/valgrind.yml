@@ -50,7 +50,7 @@ jobs:
           
       - name: Build repository 
         run: | 
-          git submodules update --init --recursive
+          git submodule update --init --recursive
           cmake -S . -B build -G Ninja \
           	-DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
           	-DENABLE_PIPEWIRE=OFF \
