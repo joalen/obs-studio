@@ -43,7 +43,7 @@ jobs:
 
       - name: Build repository 
         run: | 
-          git clone --recursive https://github.com/obsproject/obs-studio.git
+          git clone --recursive https://github.com/obsproject/obs-studio.git .
           cmake -S . -B build -G Ninja \
             -DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
             -DENABLE_PIPEWIRE=OFF \
