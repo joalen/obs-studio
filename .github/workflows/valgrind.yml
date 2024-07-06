@@ -1,0 +1,130 @@
+name: Run Valgrind
+
+on:
+  push:
+
+jobs:
+  run-valgrind:
+    name: '${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2 
+        with:
+          ref: 14d2c80560206cab2d5c810d77a14d3a324d4ebd
+          submodules: recursive
+      
+      - name: Install dependencies for project (Linux)
+        if: runner.os == 'Linux'
+        run: | 
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config clang clang-format build-essential curl ccache git zsh
+          sudo apt-get install -y libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libcurl4-openssl-dev libmbedtls-dev libgl1-mesa-dev libjansson-dev libluajit-5.1-dev python3-dev libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev libxcb-composite0-dev libxcomposite-dev libxinerama-dev libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev swig libcmocka-dev libxss-dev libglvnd-dev libgles2-mesa libgles2-mesa-dev libwayland-dev librist-dev libsrt-openssl-dev libpci-dev libpipewire-0.3-dev libqrcodegencpp-dev uthash-dev
+          sudo apt-get install -y \
+                 qt6-base-dev \
+                 qt6-base-private-dev \
+                 libqt6svg6-dev \
+                 qt6-wayland \
+                 qt6-image-formats-plugins
+          sudo apt-get install -y \
+                 libasound2-dev \
+                 libfdk-aac-dev \
+                 libfontconfig-dev \
+                 libfreetype6-dev \
+                 libjack-jackd2-dev \
+                 libpulse-dev libsndio-dev \
+                 libspeexdsp-dev \
+                 libudev-dev \
+                 libv4l-dev \
+                 libva-dev \
+                 libvlc-dev \
+                 libvpl-dev \
+                 libdrm-dev \
+                 nlohmann-json3-dev \
+                 libwebsocketpp-dev \
+                 libasio-dev
+          
+      - name: Build repository 
+        run: | 
+          git submodules update --init --recursive
+          cmake -S . -B build -G Ninja \
+          	-DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
+          	-DENABLE_PIPEWIRE=OFF \
+          	-DENABLE_AJA=0 \
+                  -DENABLE_WEBRTC=0 \
+          	-DQT_VERSION=6 -DENABLE_BROWSER=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_NEW_MPEGTS_OUTPUT=OFF -DENABLE_NATIVE_NVENC=OFF
+          cmake --build build -t libobs
+        
+      - name: Install Valgrind
+        if: runner.os == 'Linux'
+        run: | 
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+      
+      - name: Run Valgrind
+        run: |
+          #!/bin/bash
+          set +e 
+
+          echo "<----------------------Start Valgrind Service---------------------->"
+          
+          is_executable() {
+            local file="$1"
+            if file "$file" | grep -q 'ELF 64-bit'; then
+              return 0
+            else
+              return 1
+            fi
+          }
+
+          run_with_valgrind() {
+            local executable="$1"
+            local tool="$2"
+            local tool_name="$3"
+            local valgrind_options="--read-inline-info=yes --trace-children=yes -v -v"
+
+            if [ "$tool" == "memcheck" ]; then
+              valgrind_options+=" --leak-check=full --show-leak-kinds=all --track-origins=yes"
+            fi
+
+            timeout 60s valgrind --tool="$tool" $valgrind_options "$executable"
+            local exit_status=$?
+
+            if [ $exit_status -eq 124 ]; then
+              return
+            elif [ $exit_status -ne 0 ]; then
+              ((success += 1))
+            else
+              ((fails += 1))
+            fi
+          }
+
+          tools=(
+            "memcheck Memcheck"
+            "cachegrind Cachegrind"
+            "callgrind Callgrind"
+            "helgrind Helgrind"
+            "drd DRD"
+            "massif Massif"
+            "dhat DHAT"
+            "lackey Lackey"
+            "none None"
+            "exp-bbv exp-bbv"
+          )
+
+          find . -type f -executable | while read -r file; do
+            if is_executable "$file"; then
+              for tool_info in "${tools[@]}"; do
+                tool=(${tool_info})
+                echo "" 
+                echo "" 
+                echo ""
+                echo "========Valgrind tool: ${tool[1]}========"
+                run_with_valgrind "$file" "${tool[0]}" "${tool[1]}"
+              done
+            fi
+          done
