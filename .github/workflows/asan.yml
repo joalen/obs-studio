@@ -42,6 +42,10 @@ jobs:
                  libasio-dev
       - name: Build repository 
         run: | 
+          export CC=clang
+          export CXX=clang++
+          export CFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer -fno-common -fsanitize-recover=address -g"
+          export LDFLAGS="-fsanitize=address"
           git clone --recursive https://github.com/obsproject/obs-studio.git .
           cmake -S . -B build -G Ninja \
             -DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
