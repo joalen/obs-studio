@@ -19,7 +19,7 @@ jobs:
           submodules: recursive
       
       - name: Build OBS Studio
-        uses: obsproject/obs-studio/.github/actions/build-obs@master
+        uses: obsproject/obs-studio/.github/actions/build-obs@automated/clean-services
         with:
           config: Release
           target: x86_64
