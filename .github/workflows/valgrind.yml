@@ -22,7 +22,7 @@ jobs:
         uses: obsproject/obs-studio/.github/actions/build-obs@master
         with:
           config: Release
-          target: obs-studio
+          target: x86_64
           
       - name: Install Valgrind
         if: runner.os == 'Linux'
