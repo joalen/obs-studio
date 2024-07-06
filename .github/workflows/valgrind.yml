@@ -17,47 +17,35 @@ jobs:
         with:
           ref: 14d2c80560206cab2d5c810d77a14d3a324d4ebd
           submodules: recursive
-      
-      - name: Install dependencies for project (Linux)
+
+      - name: Install Dependencies 🛍️
         if: runner.os == 'Linux'
-        run: | 
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build pkg-config clang clang-format build-essential curl ccache git zsh
-          sudo apt-get install -y libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libcurl4-openssl-dev libmbedtls-dev libgl1-mesa-dev libjansson-dev libluajit-5.1-dev python3-dev libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev libxcb-composite0-dev libxcomposite-dev libxinerama-dev libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev swig libcmocka-dev libxss-dev libglvnd-dev libgles2-mesa libgles2-mesa-dev libwayland-dev libsrt-openssl-dev libpci-dev libpipewire-0.3-dev libqrcodegencpp-dev uthash-dev
-          sudo apt-get install -y \
-                 qt6-base-dev \
-                 qt6-base-private-dev \
-                 libqt6svg6-dev \
-                 qt6-wayland \
-                 qt6-image-formats-plugins
-          sudo apt-get install -y \
-                 libasound2-dev \
-                 libfdk-aac-dev \
-                 libfontconfig-dev \
-                 libfreetype6-dev \
-                 libjack-jackd2-dev \
-                 libpulse-dev libsndio-dev \
-                 libspeexdsp-dev \
-                 libudev-dev \
-                 libv4l-dev \
-                 libva-dev \
-                 libvlc-dev \
-                 libvpl-dev \
-                 libdrm-dev \
-                 nlohmann-json3-dev \
-                 libwebsocketpp-dev \
-                 libasio-dev
-          
-      - name: Build repository 
-        run: | 
-          git clone --recursive https://github.com/obsproject/obs-studio.git
-          cmake -S . -B build -G Ninja \
-          	-DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
-          	-DENABLE_PIPEWIRE=OFF \
-          	-DENABLE_AJA=0 \
-                  -DENABLE_WEBRTC=0 \
-          	-DQT_VERSION=6 -DENABLE_BROWSER=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_NEW_MPEGTS_OUTPUT=OFF -DENABLE_NATIVE_NVENC=OFF
-          cmake --build build -t libobs
+        shell: bash
+        run: |
+          : Install Dependencies 🛍️
+          echo ::group::Install Dependencies
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+          brew install --quiet zsh
+          echo ::endgroup::
+        
+      - name: Run Ubuntu Build
+        if: runner.os == 'Linux'
+        shell: bash
+        working-directory: ${{ inputs.workingDirectory }}
+        run: |
+          echo "Run Ubuntu Build"
+      
+          build_args=(
+            --config "${{ inputs.config }}"
+            --target "ubuntu-${{ inputs.target }}"
+          )
+          if [[ -n "$RUNNER_DEBUG" ]]; then
+            build_args+=(--debug)
+          fi
+      
+          git fetch origin --no-tags --no-recurse-submodules -q
+          .github/scripts/build-ubuntu "${build_args[@]}"
         
       - name: Install Valgrind
         if: runner.os == 'Linux'
