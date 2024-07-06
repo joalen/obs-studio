@@ -17,36 +17,13 @@ jobs:
         with:
           ref: 14d2c80560206cab2d5c810d77a14d3a324d4ebd
           submodules: recursive
-
-      - name: Install Dependencies 🛍️
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          : Install Dependencies 🛍️
-          echo ::group::Install Dependencies
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-          brew install --quiet zsh
-          echo ::endgroup::
-        
-      - name: Run Ubuntu Build
-        if: runner.os == 'Linux'
-        shell: bash
-        working-directory: ${{ inputs.workingDirectory }}
-        run: |
-          echo "Run Ubuntu Build"
       
-          build_args=(
-            --config "${{ inputs.config }}"
-            --target "ubuntu-${{ inputs.target }}"
-          )
-          if [[ -n "$RUNNER_DEBUG" ]]; then
-            build_args+=(--debug)
-          fi
-      
-          git fetch origin --no-tags --no-recurse-submodules -q
-          .github/scripts/build-ubuntu "${build_args[@]}"
-        
+      - name: Build OBS Studio
+        uses: obsproject/obs-studio/.github/actions/build-obs@master
+        with:
+          config: Release
+          target: obs-studio
+          
       - name: Install Valgrind
         if: runner.os == 'Linux'
         run: | 
