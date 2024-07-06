@@ -11,13 +11,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v2 
-        with:
-          ref: 14d2c80560206cab2d5c810d77a14d3a324d4ebd
-          submodules: recursive
-      
+    steps:      
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -49,6 +43,7 @@ jobs:
 
       - name: Build repository 
         run: | 
+          git clone --recursive https://github.com/obsproject/obs-studio.git
           cmake -S . -B build -G Ninja \
             -DCEF_ROOT_DIR="../obs-build-dependencies/cef_binary_5060_linux_x86_64" \
             -DENABLE_PIPEWIRE=OFF \
