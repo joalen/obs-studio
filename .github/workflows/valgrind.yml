@@ -17,12 +17,6 @@ jobs:
         with:
           ref: 14d2c80560206cab2d5c810d77a14d3a324d4ebd
           submodules: recursive
-
-              
-      - name: Setup proper CMake
-        uses: jwlawson/actions-setup-cmake@v2.0.2
-        with:
-          cmake-version: 3.16.2
       
       - name: Install dependencies
         run: |
